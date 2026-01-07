@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Low-Light Video Enhancement</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: white;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+        }
+
+        h1 {
+            font-size: 1.8em;
+            margin-bottom: 5px;
+            color: #222;
+        }
+
+        .subtitle {
+            font-size: 0.95em;
+            color: #666;
+        }
+
+        .main-card {
+            background: white;
+            padding: 30px;
+            border: 1px solid #ddd;
+            margin-bottom: 20px;
+        }
+
+        .section {
+            margin-bottom: 30px;
+            padding-bottom: 30px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .section:last-child {
+            border-bottom: none;
+        }
+
+        h2 {
+            font-size: 1.3em;
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        h3 {
+            font-size: 1.1em;
+            margin-bottom: 10px;
+            color: #444;
+        }
+
+        .upload-section {
+            text-align: center;
+            padding: 40px;
+            border: 2px dashed #999;
+            background: #fafafa;
+            margin-bottom: 20px;
+        }
+
+        .file-input-wrapper {
+            display: inline-block;
+            margin-top: 15px;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: 1px solid #333;
+            background: white;
+            font-size: 0.95em;
+            cursor: pointer;
+            font-family: Arial, sans-serif;
+        }
+
+        .btn:hover:not(:disabled) {
+            background: #333;
+            color: white;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background: #333;
+            color: white;
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .control-group {
+            background: #fafafa;
+            padding: 20px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .control-group label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        .help-text {
+            font-size: 0.85em;
+            color: #666;
+            margin-top: 5px;
+            line-height: 1.4;
+        }
+
+        select, input[type="range"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            font-size: 0.95em;
+            font-family: Arial, sans-serif;
+        }
+
+        input[type="range"] {
+            padding: 0;
+            margin-top: 10px;
+        }
+
+        .range-value {
+            display: block;
+            margin-top: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .progress-container {
+            display: none;
+            margin: 20px 0;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 25px;
+            background: #e0e0e0;
+            border: 1px solid #ccc;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #333;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85em;
+        }
+
+        .status-message {
+            text-align: center;
+            margin-top: 10px;
+            color: #666;
+        }
+
+        .results {
+            display: none;
+        }
+
+        .video-comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+            align-items: start;
+        }
+
+        .video-comparison.stacked {
+            grid-template-columns: 1fr;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .video-container {
+            border: 1px solid #ddd;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .video-label {
+            background: #f0f0f0;
+            padding: 10px;
+            text-align: center;
+            font-weight: bold;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .video-wrapper {
+            position: relative;
+            width: 100%;
+            background: #000;
+        }
+
+        video {
+            width: 100%;
+            height: auto;
+            display: block;
+            background: #000;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .stat-card {
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.8em;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #333;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .method-info {
+            background: #f9f9f9;
+            border-left: 3px solid #333;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .alert {
+            padding: 15px;
+            margin-bottom: 20px;
+            display: none;
+            border: 1px solid;
+        }
+
+        .alert-success {
+            background: #e8f5e9;
+            color: #2e7d32;
+            border-color: #4caf50;
+        }
+
+        .alert-error {
+            background: #ffebee;
+            color: #c62828;
+            border-color: #f44336;
+        }
+
+        .file-info {
+            display: none;
+            background: #fafafa;
+            padding: 15px;
+            border: 1px solid #e0e0e0;
+            margin-top: 20px;
+        }
+
+        .file-info-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .explanation-box {
+            background: #f0f0f0;
+            border: 1px solid #ccc;
+            padding: 15px;
+            margin-top: 10px;
+            font-size: 0.9em;
+        }
+
+        .explanation-box h4 {
+            margin-top: 0;
+            margin-bottom: 8px;
+        }
+
+        @media (max-width: 900px) {
+            .video-comparison {
+                grid-template-columns: 1fr;
+            }
+
+            .video-comparison.stacked {
+                max-width: 100%;
+            }
+
+            .controls {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Low-Light Video Enhancement</h1>
+            <p class="subtitle">Professional video enhancement tool with adaptive and global methods</p>
+        </header>
+
+        <div class="main-card">
+            <div class="alert alert-success" id="successAlert"></div>
+            <div class="alert alert-error" id="errorAlert"></div>
+
+            <!-- Upload Section -->
+            <div class="section">
+                <h2>Step 1: Upload Video</h2>
+                <div class="upload-section" id="uploadSection">
+                    <h3>Select Your Video File</h3>
+                    <p style="margin: 15px 0; color: #666;">Click the button below to choose a video file from your computer</p>
+                    <div class="file-input-wrapper">
+                        <label for="videoFile" class="btn btn-primary">
+                            Choose Video File
+                        </label>
+                        <input type="file" id="videoFile" accept="video/*">
+                    </div>
+                    <p style="margin-top: 15px; font-size: 0.85em; color: #999;">
+                        Supported formats: MP4, AVI, MOV, MKV | Maximum size: 500MB
+                    </p>
+                </div>
+
+                <div class="file-info" id="fileInfo">
+                    <h3>File Information</h3>
+                    <div class="file-info-item">
+                        <span>Filename:</span>
+                        <strong id="fileName"></strong>
+                    </div>
+                    <div class="file-info-item">
+                        <span>Size:</span>
+                        <strong id="fileSize"></strong>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Enhancement Controls -->
+            <div class="section" id="controlsSection" style="display: none;">
+                <h2>Step 2: Configure Enhancement Settings</h2>
+                
+                <div class="controls" id="controls">
+                    <div class="control-group">
+                        <label for="method">Enhancement Method</label>
+                        <select id="method">
+                            <option value="adaptive">Adaptive Enhancement</option>
+                            <option value="global">Global Enhancement</option>
+                        </select>
+                        <div class="help-text">
+                            <strong>Adaptive:</strong> Detects dark regions and enhances them selectively. Best for videos with mixed lighting (indoor/outdoor scenes).<br><br>
+                            <strong>Global:</strong> Applies uniform brightness increase. Faster processing. Best for uniformly dark videos.
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <label for="strength">
+                            Enhancement Strength
+                            <span class="range-value" id="strengthValue">2.0</span>
+                        </label>
+                        <input type="range" id="strength" min="1.0" max="3.0" step="0.1" value="2.0">
+                        <div class="help-text">
+                            Controls how much brightness is added. Lower values (1.0-1.5) = subtle enhancement. Higher values (2.5-3.0) = strong enhancement. Default: 2.0
+                        </div>
+                    </div>
+
+                    <div class="control-group" id="thresholdGroup">
+                        <label for="threshold">
+                            Detection Threshold (Adaptive Only)
+                            <span class="range-value" id="thresholdValue">0.4</span>
+                        </label>
+                        <input type="range" id="threshold" min="0.1" max="0.9" step="0.1" value="0.4">
+                        <div class="help-text">
+                            Determines which areas are considered "dark". Lower values (0.1-0.3) = enhance more areas. Higher values (0.5-0.9) = enhance only very dark areas. Default: 0.4
+                        </div>
+                    </div>
+
+                    <div class="control-group" id="blurGroup">
+                        <label for="blurSize">
+                            Blur Size (Adaptive Only)
+                            <span class="range-value" id="blurValue">15</span>
+                        </label>
+                        <input type="range" id="blurSize" min="5" max="35" step="2" value="15">
+                        <div class="help-text">
+                            Controls smoothness of transitions between enhanced and non-enhanced regions. Lower values (5-11) = sharper boundaries. Higher values (17-35) = smoother transitions. Default: 15
+                        </div>
+                    </div>
+                </div>
+
+                <div class="method-info" id="methodInfo" style="display: none;">
+                    <h3>Current Method</h3>
+                    <p id="methodDescription"></p>
+                </div>
+            </div>
+
+            <!-- Process Button -->
+            <div class="section" id="processSection" style="display: none;">
+                <h2>Step 3: Process Video</h2>
+                <p style="margin-bottom: 15px; color: #666;">
+                    Click the button below to start the enhancement process. Processing time depends on video length and resolution.
+                </p>
+                <button class="btn btn-primary" id="processBtn" disabled>
+                    <span id="processBtnText">Start Enhancement</span>
+                </button>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="progress-container" id="progressContainer">
+                <h3>Processing Video...</h3>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill">0%</div>
+                </div>
+                <div class="status-message" id="statusMessage">Initializing...</div>
+            </div>
+
+            <!-- Results -->
+            <div class="results" id="results">
+                <div class="section">
+                    <h2>Step 4: Review Results</h2>
+                    
+                    <div style="text-align: center; margin-bottom: 15px;">
+                        <label style="font-weight: bold; margin-right: 10px;">Video Layout:</label>
+                        <button class="btn" id="layoutSideBySide">Side by Side</button>
+                        <button class="btn" id="layoutStacked" style="margin-left: 10px;">Stacked (One Above Other)</button>
+                    </div>
+
+                    <div class="video-comparison" id="videoComparison">
+                        <div class="video-container">
+                            <div class="video-label">Original Video</div>
+                            <div class="video-wrapper">
+                                <video id="originalVideo">
+                                    Your browser does not support the video tag.
+                                </video>
+                            </div>
+                        </div>
+                        
+                        <div class="video-container">
+                            <div class="video-label">Enhanced Video</div>
+                            <div class="video-wrapper">
+                                <video id="resultVideo">
+                                    Your browser does not support the video tag.
+                                </video>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="text-align: center; margin: 20px 0;">
+                        <button class="btn btn-primary" id="playPauseBtn">Play Both Videos</button>
+                        <button class="btn" id="restartBtn" style="margin-left: 10px;">Restart Both Videos</button>
+                    </div>
+
+                    <div class="explanation-box">
+                        <h4>Synchronized Playback Controls:</h4>
+                        <p><strong>Video Layout:</strong> Toggle between "Side by Side" for comparison or "Stacked" (one above the other) if videos have different aspect ratios.</p>
+                        <p><strong>Play Both Videos:</strong> Starts or pauses both videos at the same time for easy comparison.</p>
+                        <p><strong>Restart Both Videos:</strong> Resets both videos to the beginning.</p>
+                        <p>The enhanced video should show improved visibility in dark regions while maintaining natural colors and contrast in bright areas.</p>
+                    </div>
+
+                    <h3 style="margin-top: 30px;">Processing Statistics</h3>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-value" id="statFrames">-</div>
+                            <div class="stat-label">Frames Processed</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="statTime">-</div>
+                            <div class="stat-label">Processing Time</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="statFps">-</div>
+                            <div class="stat-label">Video FPS</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="statBrightness">-</div>
+                            <div class="stat-label">Avg Brightness (Enhanced)</div>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 30px;">
+                        <button class="btn btn-primary" id="downloadBtn">
+                            Download Enhanced Video
+                        </button>
+                        <button class="btn" id="newVideoBtn" style="margin-left: 10px;">
+                            Process Another Video
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let uploadedFilename = null;
+        let downloadUrl = null;
+        let originalVideoPath = null;
+        let isPlaying = false;
+
+        const methodDescriptions = {
+            adaptive: "Adaptive enhancement detects dark regions and selectively enhances them while preserving bright areas. Best for videos with mixed lighting conditions.",
+            global: "Global enhancement applies uniform gamma correction across the entire frame. Faster processing, ideal for uniformly dark videos."
+        };
+
+        // Elements
+        const videoFile = document.getElementById('videoFile');
+        const uploadSection = document.getElementById('uploadSection');
+        const fileInfo = document.getElementById('fileInfo');
+        const controlsSection = document.getElementById('controlsSection');
+        const processSection = document.getElementById('processSection');
+        const controls = document.getElementById('controls');
+        const processBtn = document.getElementById('processBtn');
+        const progressContainer = document.getElementById('progressContainer');
+        const results = document.getElementById('results');
+        const methodSelect = document.getElementById('method');
+        const strengthSlider = document.getElementById('strength');
+        const thresholdSlider = document.getElementById('threshold');
+        const blurSlider = document.getElementById('blurSize');
+        const methodInfo = document.getElementById('methodInfo');
+        const thresholdGroup = document.getElementById('thresholdGroup');
+        const blurGroup = document.getElementById('blurGroup');
+        const originalVideo = document.getElementById('originalVideo');
+        const resultVideo = document.getElementById('resultVideo');
+        const playPauseBtn = document.getElementById('playPauseBtn');
+        const restartBtn = document.getElementById('restartBtn');
+        const videoComparison = document.getElementById('videoComparison');
+        const layoutSideBySide = document.getElementById('layoutSideBySide');
+        const layoutStacked = document.getElementById('layoutStacked');
+
+        // Layout toggle functionality
+        layoutSideBySide.addEventListener('click', () => {
+            videoComparison.classList.remove('stacked');
+            layoutSideBySide.style.background = '#333';
+            layoutSideBySide.style.color = 'white';
+            layoutStacked.style.background = 'white';
+            layoutStacked.style.color = '#333';
+        });
+
+        layoutStacked.addEventListener('click', () => {
+            videoComparison.classList.add('stacked');
+            layoutStacked.style.background = '#333';
+            layoutStacked.style.color = 'white';
+            layoutSideBySide.style.background = 'white';
+            layoutSideBySide.style.color = '#333';
+        });
+
+        // File selection
+        videoFile.addEventListener('change', handleFileSelect);
+
+        // Slider updates
+        strengthSlider.addEventListener('input', (e) => {
+            document.getElementById('strengthValue').textContent = e.target.value;
+        });
+
+        thresholdSlider.addEventListener('input', (e) => {
+            document.getElementById('thresholdValue').textContent = e.target.value;
+        });
+
+        blurSlider.addEventListener('input', (e) => {
+            document.getElementById('blurValue').textContent = e.target.value;
+        });
+
+        // Method change
+        methodSelect.addEventListener('change', () => {
+            const method = methodSelect.value;
+            methodInfo.style.display = 'block';
+            document.getElementById('methodDescription').textContent = methodDescriptions[method];
+            
+            if (method === 'adaptive') {
+                thresholdGroup.style.display = 'block';
+                blurGroup.style.display = 'block';
+            } else {
+                thresholdGroup.style.display = 'none';
+                blurGroup.style.display = 'none';
+            }
+        });
+
+        // Synchronized playback controls
+        playPauseBtn.addEventListener('click', () => {
+            if (isPlaying) {
+                originalVideo.pause();
+                resultVideo.pause();
+                playPauseBtn.textContent = 'Play Both Videos';
+                isPlaying = false;
+            } else {
+                originalVideo.play();
+                resultVideo.play();
+                playPauseBtn.textContent = 'Pause Both Videos';
+                isPlaying = true;
+            }
+        });
+
+        restartBtn.addEventListener('click', () => {
+            originalVideo.currentTime = 0;
+            resultVideo.currentTime = 0;
+            originalVideo.pause();
+            resultVideo.pause();
+            playPauseBtn.textContent = 'Play Both Videos';
+            isPlaying = false;
+        });
+
+        // Sync videos if one ends
+        originalVideo.addEventListener('ended', () => {
+            resultVideo.pause();
+            playPauseBtn.textContent = 'Play Both Videos';
+            isPlaying = false;
+        });
+
+        resultVideo.addEventListener('ended', () => {
+            originalVideo.pause();
+            playPauseBtn.textContent = 'Play Both Videos';
+            isPlaying = false;
+        });
+
+        // Handle file selection
+        async function handleFileSelect() {
+            const file = videoFile.files[0];
+            if (!file) return;
+
+            // Display file info
+            document.getElementById('fileName').textContent = file.name;
+            document.getElementById('fileSize').textContent = formatBytes(file.size);
+            fileInfo.style.display = 'block';
+
+            // Upload file
+            const formData = new FormData();
+            formData.append('video', file);
+
+            showStatus('Uploading video...', 'info');
+            
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    uploadedFilename = data.filename;
+                    originalVideoPath = data.filepath;
+                    controlsSection.style.display = 'block';
+                    processSection.style.display = 'block';
+                    processBtn.disabled = false;
+                    methodInfo.style.display = 'block';
+                    document.getElementById('methodDescription').textContent = methodDescriptions[methodSelect.value];
+                    showStatus('Video uploaded successfully', 'success');
+                } else {
+                    showStatus('Upload failed: ' + data.error, 'error');
+                }
+            } catch (error) {
+                showStatus('Upload error: ' + error.message, 'error');
+            }
+        }
+
+        // Process video
+        processBtn.addEventListener('click', async () => {
+            if (!uploadedFilename) return;
+
+            processBtn.disabled = true;
+            document.getElementById('processBtnText').textContent = 'Processing...';
+            progressContainer.style.display = 'block';
+            results.style.display = 'none';
+
+            const params = {
+                filename: uploadedFilename,
+                method: methodSelect.value,
+                strength: parseFloat(strengthSlider.value)
+            };
+
+            if (methodSelect.value === 'adaptive') {
+                params.threshold = parseFloat(thresholdSlider.value);
+                params.blur_size = parseInt(blurSlider.value);
+            }
+
+            try {
+                updateProgress(0, 'Starting enhancement...');
+                
+                const response = await fetch('/enhance', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(params)
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    downloadUrl = data.download_url;
+                    displayResults(data);
+                    showStatus('Enhancement completed successfully', 'success');
+                } else {
+                    const errorMsg = data.error || 'Unknown error occurred';
+                    const details = data.details ? '\n\nDetails:\n' + data.details : '';
+                    console.error('Enhancement failed:', errorMsg);
+                    if (data.details) {
+                        console.error('Error details:', data.details);
+                    }
+                    showStatus('Enhancement failed: ' + errorMsg, 'error');
+                    alert('Enhancement Error:\n' + errorMsg + details);
+                }
+            } catch (error) {
+                console.error('Processing error:', error);
+                showStatus('Processing error: ' + error.message, 'error');
+                alert('Processing Error:\n' + error.message + '\n\nCheck the browser console (F12) and terminal for more details.');
+            } finally {
+                processBtn.disabled = false;
+                document.getElementById('processBtnText').textContent = 'Start Enhancement';
+                progressContainer.style.display = 'none';
+            }
+        });
+
+        // Display results
+        function displayResults(data) {
+            const stats = data.stats;
+            
+            console.log('=== VIDEO LOADING DEBUG ===');
+            console.log('Uploaded filename:', uploadedFilename);
+            console.log('Output filename:', data.output_filename);
+            
+            // Set both videos with cache busting
+            const timestamp = new Date().getTime();
+            const originalSrc = `/preview/uploads/${uploadedFilename}?t=${timestamp}`;
+            const enhancedSrc = `/preview/${data.output_filename}?t=${timestamp}`;
+            
+            console.log('Original video URL:', originalSrc);
+            console.log('Enhanced video URL:', enhancedSrc);
+            
+            originalVideo.src = originalSrc;
+            resultVideo.src = enhancedSrc;
+            
+            // Add error handlers
+            originalVideo.onerror = function(e) {
+                console.error('ERROR loading original video:', e);
+                console.error('Original video src:', originalVideo.src);
+                showStatus('Error loading original video. Check browser console.', 'error');
+            };
+            
+            resultVideo.onerror = function(e) {
+                console.error('ERROR loading enhanced video:', e);
+                console.error('Enhanced video src:', resultVideo.src);
+                showStatus('Error loading enhanced video. Check browser console.', 'error');
+            };
+            
+            // Add load success handlers
+            originalVideo.onloadedmetadata = function() {
+                console.log('Original video metadata loaded');
+                console.log('Duration:', originalVideo.duration, 'seconds');
+                console.log('Dimensions:', originalVideo.videoWidth, 'x', originalVideo.videoHeight);
+                console.log('Aspect ratio:', (originalVideo.videoWidth / originalVideo.videoHeight).toFixed(3));
+            };
+            
+            resultVideo.onloadedmetadata = function() {
+                console.log('Enhanced video metadata loaded');
+                console.log('Duration:', resultVideo.duration, 'seconds');
+                console.log('Dimensions:', resultVideo.videoWidth, 'x', resultVideo.videoHeight);
+                console.log('Aspect ratio:', (resultVideo.videoWidth / resultVideo.videoHeight).toFixed(3));
+            };
+            
+            // Load videos
+            originalVideo.load();
+            resultVideo.load();
+            
+            // Reset playback state
+            isPlaying = false;
+            playPauseBtn.textContent = 'Play Both Videos';
+            
+            document.getElementById('statFrames').textContent = stats.total_frames.toLocaleString();
+            document.getElementById('statTime').textContent = stats.processing_time.toFixed(2) + 's';
+            document.getElementById('statFps').textContent = stats.fps.toFixed(1);
+            document.getElementById('statBrightness').textContent = stats.avg_brightness.toFixed(1);
+            
+            results.style.display = 'block';
+            
+            console.log('=== END VIDEO LOADING DEBUG ===');
+        }
+
+        // Download button
+        document.getElementById('downloadBtn').addEventListener('click', () => {
+            if (downloadUrl) {
+                window.location.href = downloadUrl;
+            }
+        });
+
+        // New video button
+        document.getElementById('newVideoBtn').addEventListener('click', () => {
+            location.reload();
+        });
+
+        // Helper functions
+        function updateProgress(percent, message) {
+            const fill = document.getElementById('progressFill');
+            fill.style.width = percent + '%';
+            fill.textContent = Math.round(percent) + '%';
+            document.getElementById('statusMessage').textContent = message;
+        }
+
+        function showStatus(message, type) {
+            const successAlert = document.getElementById('successAlert');
+            const errorAlert = document.getElementById('errorAlert');
+            
+            successAlert.style.display = 'none';
+            errorAlert.style.display = 'none';
+            
+            if (type === 'success') {
+                successAlert.textContent = message;
+                successAlert.style.display = 'block';
+            } else if (type === 'error') {
+                errorAlert.textContent = message;
+                errorAlert.style.display = 'block';
+            }
+            
+            setTimeout(() => {
+                successAlert.style.display = 'none';
+                errorAlert.style.display = 'none';
+            }, 5000);
+        }
+
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+        }
+    </script>
+</body>
+</html>
+</body>
+</html>
